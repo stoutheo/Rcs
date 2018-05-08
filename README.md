@@ -44,9 +44,9 @@ It is also possible to compile it on Microsoft Visual Studio, however with some 
 Rcs has been designed carefully to have only little dependencies. The ones that have been selected are in our opinion very matured libraries:
 
  - Libxml2 (MIT License)
- - Qt: LGPL (Also dual commercial license available)
- - qwt (LGPL with additions)
- - OpenSceneGraph (OSGPL)
+ - Qt: LGPL (Also dual commercial license available), specifically : qt4-dev-tools
+ - qwt (LGPL with additions), specifically : libqwt5-qt4-dev and libqwt5-qt4
+ - OpenSceneGraph (OSGPL), specifically :libopenscenegraph-dev
 
 Optionally (please use the ccmake tool to manage the compile options), additional functionality can be compiled in when activating
 
