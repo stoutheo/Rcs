@@ -104,7 +104,36 @@ static bool getModel(char* directory, char* xmlFileName)
 }
 
 
+static void transform_objData(MatNd* objData, double Rot[3][3], double trans_vec[3])
+{
+  double objPos[3], RHandPos[3], LHandPos[3];
 
+  Mat3d_transposeSelf(Rot);      // in order to pre-multiply
+  for (unsigned int i_data=0; i_data<objData->m; i_data++)
+  {
+    for (unsigned int i=0; i<3; i++)
+    {
+      objPos[i] =  MatNd_get(objData, i_data, i+1);
+      RHandPos[i] = MatNd_get(objData, i_data, i+5);
+      LHandPos[i] = MatNd_get(objData, i_data, i+8);
+    }
+    // Vec3d_printFormatted("Message 1", "%f \n", pos);
+    Vec3d_rotateSelf(objPos, Rot);    // pre-multiply
+    Vec3d_rotateSelf(RHandPos, Rot);
+    Vec3d_rotateSelf(LHandPos, Rot);
+
+    // Vec3d_printFormatted("Message 2", "%f \n", pos);
+    Vec3d_addSelf(objPos, trans_vec);   // translate
+
+    // Vec3d_printFormatted("Message", "%f \n", pos);
+    for (unsigned int i=0; i<3; i++)
+    {
+      MatNd_set(objData, i_data, i+1,  objPos[i]);
+      MatNd_set(objData, i_data, i+5,  RHandPos[i]);
+      MatNd_set(objData, i_data, i+8,  LHandPos[i]);
+    }
+  }
+}
 
 
 /*******************************************************************************
@@ -190,7 +219,6 @@ int main(int argc, char** argv)
     	// arg parser
      	// .............................
 
-      int motion = 1;
 
       // flag args
       bool pause = argP.hasArgument("-pause", "Hit key for each iteration");
@@ -338,24 +366,65 @@ int main(int argc, char** argv)
 			}
 
       // New experimental code starts here.....
-      RMSG("Size of x_des %d:", x_des->size);
+      int rI, lI;
+      int RtaskIndex = controller.getTaskIndex("Rel2ObjR XYZ");
+      int LtaskIndex = controller.getTaskIndex("Rel2ObjL XYZ");
+      RtaskIndex *= 3;
+      LtaskIndex *= 3;
+      RMSG("The index of the task %i, %i ", LtaskIndex, RtaskIndex);
 
-      int taskIndex = controller.getTaskIndex("Box XYZ");
-      size_t TaskDim = controller.getTaskDim(taskIndex);
-      RMSG("The index of the task %i ,%i ", taskIndex, TaskDim);
 
+      // MatNd* x_Box_Traj = MatNd_create(1000, 1);
+      // MatNd_setElementsTo(x_Box_Traj, 0.001);
+      // for (unsigned int i=1; i<x_Box_Traj->m; i++)
+      // {
+      //   MatNd_addToEle(x_Box_Traj, i, 0, MatNd_get(x_Box_Traj, i-1, 0) );
+      // }
 
-      MatNd* x_Box_Traj = MatNd_create(1000, 1);
-      MatNd_setElementsTo(x_Box_Traj, 0.001);
-      for (unsigned int i=1; i<x_Box_Traj->m; i++)
-      {
-        MatNd_addToEle(x_Box_Traj, i, 0, MatNd_get(x_Box_Traj, i-1, 0) );
-      }
-      unsigned int counter = 0;
-      double new_target = 0;
       // --------------------------------------------------------------------
-			// Starting infinite loop ---------------------------------------------
+			// Starting data for motio plan regeneration ---------------------------------------------
+      bool start_pos = false;
 
+      MatNd* Dat_Motion = MatNd_createFromFile("data_Rcs3.txt");
+      MatNd_print(Dat_Motion);
+
+      double Rot[3][3], trans_vec[3], obj_tar[4], rhand_tar[3], lhand_tar[3];
+      double rhand_Ortar[3], lhand_Ortar[3];
+      Vec3d_setZero(rhand_tar);
+      Vec3d_setZero(lhand_tar);
+      Vec3d_set(rhand_Ortar,-M_PI/2, 0.0, -M_PI/2);
+      Vec3d_set(lhand_Ortar, M_PI/2, 0.0, 0.0);
+
+      Vec3d_set(trans_vec, 0.0, 0.0, 1.5);
+      // Mat3d_setIdentity(Rot);
+
+      Mat3d_setRotMatX(Rot, M_PI/2);
+
+      RMSG(" -------------------------------------- /n");
+      transform_objData(Dat_Motion, Rot, trans_vec);
+      // MatNd_print(Dat_Motion);
+
+      // make a matNd to scale time of the motion and position of arms
+      MatNd* scale_MT;
+      MatNd_clone2(scale_MT, Dat_Motion);
+      MatNd_setElementsTo(scale_MT, 1.0);
+      MatNd_setColumnToValue(scale_MT, 0, 1);
+      // scale of arms position
+      for (unsigned int i=0; i<3; i++)
+      {
+        rI = i + 5;
+        lI = i + 8;
+        MatNd_setColumnToValue(scale_MT, rI, 3);
+        MatNd_setColumnToValue(scale_MT, lI, 3);
+      }
+
+      MatNd_eleMulSelf(Dat_Motion, scale_MT);
+      // MatNd_print(Dat_Motion);
+
+      unsigned int counter = 0;
+      double start_time = 0.0;
+      // --------------------------------------------------------------------
+      // Starting infinite loop ---------------------------------------------
 			while (runLoop)
 			{
         //................................
@@ -370,17 +439,89 @@ int main(int argc, char** argv)
         // Apply desired joint angles from Gui with interpolation
         // if the joints are position control
         /////////////////////////////////////////////////////////////////
-        for (unsigned int i=3; i<x_des->m; i++)
+        for (unsigned int i=18; i<x_des->m; i++)
         {
           x_goal->ele[i] = (1.0-tmc)*x_goal->ele[i] + tmc*x_des->ele[i];
         }
 
-        if (counter < 1000)
+        // Bring object to the star pose.
+        if (start_pos == true)
         {
+          for (unsigned int i=0; i<4; i++)
+          {
+            obj_tar[i] =  MatNd_get(Dat_Motion, 0, i+1);
+          }
+          for (unsigned int i=0; i<3; i++)
+          {
+            rhand_tar[i] =  MatNd_get(Dat_Motion, 0, i+5);
+            lhand_tar[i] =  MatNd_get(Dat_Motion, 0, i+8);
+          }
 
-          x_goal->ele[2] = (1.0-tmc)*x_goal->ele[2] + tmc*(new_target + motion*MatNd_get(x_Box_Traj, counter, 0));
-          counter += 1;
+          start_time = dt_calc;
+          start_pos = false;
         }
+
+        if (counter == 0)
+        {
+          start_time = dt_calc;
+        }
+
+        if ( MatNd_get(Dat_Motion, counter, 0) < (dt_calc - start_time) && counter != 0)
+        {
+          // RMSG(" In the updater !!! , %f, aou %f ", MatNd_get(Dat_Motion, counter, 0), (dt_calc - start_time));
+          for (unsigned int i=0; i<4; i++)
+          {
+            obj_tar[i] =  MatNd_get(Dat_Motion, counter, i+1);
+          }
+          for (unsigned int i=0; i<3; i++)
+          {
+            rhand_tar[i] =  MatNd_get(Dat_Motion, counter, i+5);
+            lhand_tar[i] =  MatNd_get(Dat_Motion, counter, i+8);
+          }
+
+          if (counter < Dat_Motion->m - 1)
+          {
+            counter += 1;
+          }
+          else
+          {
+            counter = 0;
+          }
+        }
+
+        /////////////////////////////////////////////////////////////////
+        // Realise kinematic plan input
+        /////////////////////////////////////////////////////////////////
+
+        // move box to the target position
+        for (unsigned int i=0; i<3; i++)
+        {
+          x_goal->ele[i] = (1.0-tmc)*x_goal->ele[i] + tmc*(obj_tar[i]);
+        }
+        x_goal->ele[4] = (1.0-tmc)*x_goal->ele[4] + tmc*(-1*obj_tar[3]);
+
+
+        // move arms to the target position
+        for (unsigned int i=0; i<3; i++)
+        {
+          rI = i + RtaskIndex;
+          lI = i + LtaskIndex;
+
+          x_goal->ele[rI] = (1.0-tmc)*x_goal->ele[rI] + tmc*(rhand_tar[i]);
+          x_goal->ele[lI] = (1.0-tmc)*x_goal->ele[lI] + tmc*(lhand_tar[i]);
+        }
+
+
+        // move arms to the target position
+        for (unsigned int i=0; i<3; i++)
+        {
+          rI = i + 12;
+          lI = i + 15;
+
+          x_goal->ele[rI] = (1.0-tmc)*x_goal->ele[rI] + tmc*(rhand_Ortar[i]);
+          x_goal->ele[lI] = (1.0-tmc)*x_goal->ele[lI] + tmc*(lhand_Ortar[i]);
+        }
+
         /////////////////////////////////////////////////////////////////
         // Compute control input
         /////////////////////////////////////////////////////////////////
@@ -469,11 +610,15 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('u'))
         {
-          motion = -1*motion; // inverse motion
-          counter = 0;       // restart counter
-          new_target = x_goal->ele[2];
-          RMSG("motion modus is %i", motion);
+          counter = 1;
+          RMSG("motion start!");
         }
+        else if (kc && kc->getAndResetKey('p'))
+        {
+          start_pos = true; // start poistion
+          RMSG("Start pose reached");
+        }
+
 
 
         if (valgrind)

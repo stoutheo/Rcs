@@ -1,18 +1,18 @@
 <Controller graph="gScenario_Kin.xml" >
 
-  <Task name="Box XYZ" controlVariable="XYZ"   effector="Box"    active="true" />
-  <Task name="Box ABC" controlVariable="Joints"   jnts="DofThX DofThY DofThZ"    active="true" />
+  <Task name="Box XYZ" controlVariable="XYZ"   effector="Box"     />
+  <Task name="Box ABC" controlVariable="Joints"   jnts="DofThX DofThY DofThZ"     />
 
 
-  <Task name="Rel2Obj_L_XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" refBdy="Box" />
-  <Task name="Rel2Obj_L_ABC"   controlVariable="ABC"   effector="PowerGrasp_L" refBdy="Box" />
+  <Task name="Rel2ObjR XYZ"   controlVariable="XYZ"   effector="PowerGrasp_R" refBdy="Box"  />
+  <Task name="Rel2ObjL XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" refBdy="Box" />
 
-  <Task name="Rel2Obj_R_XYZ"   controlVariable="XYZ"   effector="PowerGrasp_R" refBdy="Box" />
-  <Task name="Rel2Obj_R_ABC"   controlVariable="ABC"   effector="PowerGrasp_R" refBdy="Box" />
+  <Task name="Rel2ObjR BC"   controlVariable="ABC"   effector="PowerGrasp_R" refBdy="Box"/>
+  <Task name="Rel2ObjL BC"   controlVariable="ABC"   effector="PowerGrasp_L" refBdy="Box"/>
 
   <!-- Feet wrt. heel frame -->
-  <Task name="Base X"   controlVariable="Joint" jnt="DofBaseX"   active="true" />
-  <Task name="Base Y"   controlVariable="Joint" jnt="DofBaseY"   active="true" />
+  <Task name="Base X"   controlVariable="Joint" jnt="DofBaseX"   active="false" />
+  <Task name="Base Y"   controlVariable="Joint" jnt="DofBaseY"   active="false" />
   <Task name="Base ThZ" controlVariable="Joint" jnt="DofBaseThZ" active="true" />
 
 </Controller>
