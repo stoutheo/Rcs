@@ -2,7 +2,7 @@ SET(RCS_HYBRIDPLANNER_SRCS ${PROJECT_SOURCE_DIR}/projects/HybridPlanner)
 
 
 include_directories(${RCS_HYBRIDPLANNER_SRCS}/modules  ${PROJECT_SOURCE_DIR}/src/RcsCore)
-add_library(MotionPlan SHARED ${RCS_HYBRIDPLANNER_SRCS}/modules/MotionPlanning.cpp)
+#add_library(MotionPlan SHARED ${RCS_HYBRIDPLANNER_SRCS}/modules/MotionPlanning.cpp)
 
 ##############################################################################
 #
