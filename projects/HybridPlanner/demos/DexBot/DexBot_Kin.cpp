@@ -115,7 +115,7 @@ static void transform_objData(MatNd* objData, double Rot[3][3], double trans_vec
     {
       objPos[i] =  MatNd_get(objData, i_data, i+1);
       RHandPos[i] = MatNd_get(objData, i_data, i+5);
-      LHandPos[i] = MatNd_get(objData, i_data, i+8);
+      LHandPos[i] = MatNd_get(objData, i_data, i+9);
     }
     // Vec3d_printFormatted("Message 1", "%f \n", pos);
     Vec3d_rotateSelf(objPos, Rot);    // pre-multiply
@@ -130,7 +130,7 @@ static void transform_objData(MatNd* objData, double Rot[3][3], double trans_vec
     {
       MatNd_set(objData, i_data, i+1,  objPos[i]);
       MatNd_set(objData, i_data, i+5,  RHandPos[i]);
-      MatNd_set(objData, i_data, i+8,  LHandPos[i]);
+      MatNd_set(objData, i_data, i+9,  LHandPos[i]);
     }
   }
 }
@@ -385,16 +385,17 @@ int main(int argc, char** argv)
 			// Starting data for motio plan regeneration ---------------------------------------------
       bool start_pos = false;
 
-      MatNd* Dat_Motion = MatNd_createFromFile("data_Rcs3.txt");
-      MatNd_print(Dat_Motion);
+      MatNd* Dat_Motion = MatNd_createFromFile("data_RcsP-nice.txt");
+      // MatNd_print(Dat_Motion);
 
       double Rot[3][3], trans_vec[3], obj_tar[4], rhand_tar[3], lhand_tar[3];
       double rhand_Ortar[3], lhand_Ortar[3];
       Vec3d_setZero(rhand_tar);
       Vec3d_setZero(lhand_tar);
-      Vec3d_set(rhand_Ortar,-M_PI/2, 0.0, -M_PI/2);
+      Vec3d_set(rhand_Ortar, M_PI/2, 0.0, 0.0);
       Vec3d_set(lhand_Ortar, M_PI/2, 0.0, 0.0);
 
+      // translate the world coord 1.5 meters up
       Vec3d_set(trans_vec, 0.0, 0.0, 1.5);
       // Mat3d_setIdentity(Rot);
 
@@ -413,16 +414,18 @@ int main(int argc, char** argv)
       for (unsigned int i=0; i<3; i++)
       {
         rI = i + 5;
-        lI = i + 8;
-        MatNd_setColumnToValue(scale_MT, rI, 3);
-        MatNd_setColumnToValue(scale_MT, lI, 3);
+        lI = i + 9;
+        MatNd_setColumnToValue(scale_MT, rI, 2.8);
+        MatNd_setColumnToValue(scale_MT, lI, 2.8);
       }
 
       MatNd_eleMulSelf(Dat_Motion, scale_MT);
-      // MatNd_print(Dat_Motion);
+      MatNd_print(Dat_Motion);
 
       unsigned int counter = 0;
       double start_time = 0.0;
+
+      bool freeze = false;
       // --------------------------------------------------------------------
       // Starting infinite loop ---------------------------------------------
 			while (runLoop)
@@ -447,15 +450,20 @@ int main(int argc, char** argv)
         // Bring object to the star pose.
         if (start_pos == true)
         {
+          // setup object's pose
           for (unsigned int i=0; i<4; i++)
           {
             obj_tar[i] =  MatNd_get(Dat_Motion, 0, i+1);
           }
+          // setup grasp-holds
           for (unsigned int i=0; i<3; i++)
           {
             rhand_tar[i] =  MatNd_get(Dat_Motion, 0, i+5);
-            lhand_tar[i] =  MatNd_get(Dat_Motion, 0, i+8);
+            lhand_tar[i] =  MatNd_get(Dat_Motion, 0, i+9);
           }
+          // setup orientation
+          rhand_Ortar[2] = MatNd_get(Dat_Motion, 0, 8);
+          lhand_Ortar[2] = MatNd_get(Dat_Motion, 0, 12);
 
           start_time = dt_calc;
           start_pos = false;
@@ -468,20 +476,30 @@ int main(int argc, char** argv)
 
         if ( MatNd_get(Dat_Motion, counter, 0) < (dt_calc - start_time) && counter != 0)
         {
-          // RMSG(" In the updater !!! , %f, aou %f ", MatNd_get(Dat_Motion, counter, 0), (dt_calc - start_time));
+          // update object's pose
           for (unsigned int i=0; i<4; i++)
           {
             obj_tar[i] =  MatNd_get(Dat_Motion, counter, i+1);
           }
+          // update grasp-holds
           for (unsigned int i=0; i<3; i++)
           {
             rhand_tar[i] =  MatNd_get(Dat_Motion, counter, i+5);
-            lhand_tar[i] =  MatNd_get(Dat_Motion, counter, i+8);
+            lhand_tar[i] =  MatNd_get(Dat_Motion, counter, i+9);
           }
+          // update orientation
+          rhand_Ortar[2] = MatNd_get(Dat_Motion, counter, 8);
+          lhand_Ortar[2] = MatNd_get(Dat_Motion, counter, 12);
 
-          if (counter < Dat_Motion->m - 1)
+
+          // stop motion if completed
+          if (counter < Dat_Motion->m - 1 && freeze == false)
           {
             counter += 1;
+          }
+          else if (counter < Dat_Motion->m - 1)
+          {
+            true;
           }
           else
           {
@@ -512,7 +530,7 @@ int main(int argc, char** argv)
         }
 
 
-        // move arms to the target position
+        // move arms to the target orientation
         for (unsigned int i=0; i<3; i++)
         {
           rI = i + 12;
@@ -538,6 +556,8 @@ int main(int argc, char** argv)
         if (calcDistance==true)
         {
           controller.computeCollisionCost();
+          MatNd_setZero(dH);
+          controller.computeCollisionGradient(dH);
         }
 
         // compute manipulability gradient
@@ -618,7 +638,11 @@ int main(int argc, char** argv)
           start_pos = true; // start poistion
           RMSG("Start pose reached");
         }
-
+        else if (kc && kc->getAndResetKey('f'))
+        {
+          freeze = !freeze; // freeze simulation
+          RMSG(" freeze simulation ");
+        }
 
 
         if (valgrind)

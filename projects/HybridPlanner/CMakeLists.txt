@@ -11,6 +11,3 @@ add_library(MotionPlan SHARED ${RCS_HYBRIDPLANNER_SRCS}/modules/MotionPlanning.c
 ##############################################################################
 ADD_EXECUTABLE(DexBot_Kin ${RCS_HYBRIDPLANNER_SRCS}/demos/DexBot/DexBot_Kin.cpp)
 TARGET_LINK_LIBRARIES(DexBot_Kin RcsGui RcsGraphics)
-
-ADD_EXECUTABLE(DexBot_MoveBox ${RCS_HYBRIDPLANNER_SRCS}/demos/DexBot/DexBot_MoveBox.cpp)
-TARGET_LINK_LIBRARIES(DexBot_MoveBox RcsGui RcsGraphics RcsPhysics MotionPlan)
