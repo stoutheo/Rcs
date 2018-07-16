@@ -39,6 +39,7 @@
   </Body>
 
   <Body name="RightHandTip" prev="RightHand" transform="0.1 0 0 -90 0 0" >
+    <Shape type="SPHERE" radius="0.01" distance="false" graphics="false" />
     <Shape type="FRAME" scale="0.25" />
   </Body>
 

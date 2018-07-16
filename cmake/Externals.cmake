@@ -69,29 +69,29 @@ IF (USE_BULLET STREQUAL 2.83_double)
 
   IF(UNIX)
     SET(BULLET_LIBRARIES
-      ${BT_LIB_DIR}/libLinearMath.so 
+      ${BT_LIB_DIR}/libLinearMath.so
       ${BT_LIB_DIR}/libBulletCollision.so
-      ${BT_LIB_DIR}/libBulletDynamics.so 
-      ${BT_LIB_DIR}/libBulletSoftBody.so 
+      ${BT_LIB_DIR}/libBulletDynamics.so
+      ${BT_LIB_DIR}/libBulletSoftBody.so
       )
   ELSEIF(WIN32)
     SET(BULLET_LIBRARIES
-      ${BT_LIB_DIR}/BulletCollision.lib 
-      ${BT_LIB_DIR}/BulletDynamics.lib 
-      ${BT_LIB_DIR}/BulletFileLoader.lib 
-      ${BT_LIB_DIR}/BulletSoftBody.lib 
+      ${BT_LIB_DIR}/BulletCollision.lib
+      ${BT_LIB_DIR}/BulletDynamics.lib
+      ${BT_LIB_DIR}/BulletFileLoader.lib
+      ${BT_LIB_DIR}/BulletSoftBody.lib
       ${BT_LIB_DIR}/BulletInverseDynamics.lib
       ${BT_LIB_DIR}/BulletInverseDynamicsUtils.lib
-      ${BT_LIB_DIR}/BulletWorldImporter.lib 
-      ${BT_LIB_DIR}/BulletXmlWorldImporter.lib 
-      ${BT_LIB_DIR}/ConvexDecomposition.lib 
-      ${BT_LIB_DIR}/GIMPACTUtils.lib 
-      ${BT_LIB_DIR}/LinearMath.lib 
+      ${BT_LIB_DIR}/BulletWorldImporter.lib
+      ${BT_LIB_DIR}/BulletXmlWorldImporter.lib
+      ${BT_LIB_DIR}/ConvexDecomposition.lib
+      ${BT_LIB_DIR}/GIMPACTUtils.lib
+      ${BT_LIB_DIR}/LinearMath.lib
       opengl32 glu32
       ${BT_LIB_DIR}/glut32.lib
       )
   ENDIF()
-  
+
 ELSEIF(USE_BULLET STREQUAL 2.83_float)
 
   FIND_PACKAGE(Bullet REQUIRED)
@@ -100,8 +100,8 @@ ENDIF()
 
 ################################################################################
 #
-# Settings for OpenSceneGraph 
-# 
+# Settings for OpenSceneGraph
+#
 ################################################################################
 IF(WIN32)
 
@@ -133,15 +133,15 @@ ELSE()
 
   SET(OpenSceneGraph_MARK_AS_ADVANCED TRUE)
   FIND_PACKAGE(OpenSceneGraph REQUIRED
-    OpenThreads 
-    osgDB 
-    osg 
-    osgManipulator 
-    osgShadow 
-    osgText 
-    osgUtil 
-    osgViewer 
-    osgFX 
+    OpenThreads
+    osgDB
+    osg
+    osgManipulator
+    osgShadow
+    osgText
+    osgUtil
+    osgViewer
+    osgFX
     osgGA)
 
 ENDIF()
@@ -152,8 +152,12 @@ ENDIF()
 #
 ################################################################################
 SET(WM5_DEFINITIONS USE_WM5)
-SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include)
-SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT})
+# SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include)
+# SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT})
+
+SET(WM5_INCLUDE_DIR /home/theo/software/tools/GeometricTools/WildMagic5/SDK/Include)
+SET(WM5_LIBRARY_DIR /home/theo/software/tools/GeometricTools/WildMagic5/SDK/Library/ReleaseDynamic)
+
 
 IF(WIN32)
   SET(WM5_LIBRARIES
@@ -180,7 +184,7 @@ ENDIF(WIN32)
 
 ################################################################################
 #
-# Settings for pthreads. 
+# Settings for pthreads.
 #
 ################################################################################
 IF(WIN32)
@@ -201,7 +205,7 @@ IF(WIN32)
   SET(QWT_INCLUDE_DIR ${HGR}/External/qwt/5.2/include)
   SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/5.2/lib/${MKPLT})
   SET(QWT_MAJOR_VERSION 5)
-  
+
   ADD_LIBRARY(libqwt STATIC IMPORTED)
   SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt5${RCS_DEBUG_SUFFIX}.lib)
   SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${HGR}/External/qwt/5.2/include)
@@ -216,14 +220,14 @@ ENDIF(WIN32)
 ################################################################################
 #
 # Octomap
-# 
+#
 ################################################################################
 SET(OCTOMAP_DEFINITIONS -DUSE_OCTOMAP)
 SET(OCTOMAP_INCLUDE_DIR ${HGR}/External/octomap/1.6.8/include)
 SET(OCTOMAP_LIBRARY_DIR ${HGR}/External/octomap/1.6.8/lib/${MKPLT})
 
 IF(WIN32)
-  SET(OCTOMAP_LIBRARIES 
+  SET(OCTOMAP_LIBRARIES
     ${OCTOMAP_LIBRARY_DIR}/octomap.lib
     ${OCTOMAP_LIBRARY_DIR}/octomath.lib)
 ELSE(WIN32)
@@ -235,7 +239,7 @@ ENDIF(WIN32)
 ################################################################################
 #
 # Eigen3 math library
-# 
+#
 ################################################################################
 IF(USE_EIGEN3)
   FIND_PACKAGE (Eigen3 3.2.0 REQUIRED)

@@ -11,3 +11,6 @@ include_directories(${RCS_HYBRIDPLANNER_SRCS}/modules  ${PROJECT_SOURCE_DIR}/src
 ##############################################################################
 ADD_EXECUTABLE(DexBot_Kin ${RCS_HYBRIDPLANNER_SRCS}/demos/DexBot/DexBot_Kin.cpp)
 TARGET_LINK_LIBRARIES(DexBot_Kin RcsGui RcsGraphics)
+
+ADD_EXECUTABLE(Avatar_Kin ${RCS_HYBRIDPLANNER_SRCS}/demos/Avatar/Avatar_Kin.cpp)
+TARGET_LINK_LIBRARIES(Avatar_Kin RcsGui RcsGraphics)
